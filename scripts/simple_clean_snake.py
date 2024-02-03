@@ -1,26 +1,13 @@
 import pandas as pd
 import scanpy as sc
 import anndata as ad
-import importlib
 from sc_utils import scanpy_utils as su
 import numpy as np
 import os
-import re
-import matplotlib.pyplot as plt
-import pickle
 import seaborn as sns
-from matplotlib.pyplot import rc_context
 import numpy as np
-import scipy.sparse as sp
-import anndata
-from typing import Dict, Optional
-from collections import defaultdict
-import itertools
-import pygame
-from matplotlib import cm
 import matplotlib
 import seaborn as sns
-from collections import Counter
 
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 from matplotlib import rcParams
@@ -34,6 +21,7 @@ matplotlib.rcParams['figure.figsize'] = [12, 5]
 sc.settings.verbosity = 0
 sc.logging.print_header()
 sc.set_figure_params(dpi=900)
+sc._settings.ScanpyConfig.n_jobs(15)
 
 ## from snakemake input, output and config
 workdir = snakemake.config["project"]["workdir"]
@@ -41,7 +29,6 @@ project_name = snakemake.config["project"]["project_name"]
 h5dir = snakemake.config["project"]["h5dir"]
 
 os.chdir(workdir)
-
 filter_params = {
     'min_counts':400, 'min_genes':200, 'max_genes' : 5000, 'percent_mt':5, 'percent':3, 'filter_mt':True
 }
@@ -50,7 +37,7 @@ raw_dict = defaultdict(lambda: "Not Present")
 no_doublet_dict = defaultdict(lambda: "Not Present")
 filter_dict = defaultdict(lambda: "Not Present")
 ## read in sample info
-info = pd.read_csv(snakemake.input['info'], sep='\t')
+info = pd.read_csv(snakemake.config["files"]["info"])
 cols = ['randnr_mother', 'randomization_mother']
 group = info[cols].groupby('randomization_mother') \
                  .apply(lambda x: x.set_index('randomization_mother').to_dict('list')) \
@@ -80,9 +67,9 @@ for sample_name, sample in raw_dict.items():
     doublet = np.array(sample.obs['predicted_doublet'], dtype=bool)
     no_doublet_dict[sample_name] = sample[~doublet]
 for sample_name, sample in no_doublet_dict.items():
-    su.qc(sample, f'{sample_name}_no_doublet', 'MT')
-    filter_dict[sample_name] = su.filter_adata(sample, **filter_params)
+    su.qc(sample, f'{sample_name}_no_doublet', 'MT', basedir=workdir)
+    filter_dict[sample_name] = su.filter_adata(sample, **filter_params, basedir=workdir)
 ad_all = ad.concat(list(filter_dict.values()), label='sample', keys=list(filter_dict.keys()), join='outer', index_unique='-', merge='same')
 
 ## save ad_all
-ad_all.write(snakemake.output['ad_all'], compression='gzip')
+ad_all.write(f'{h5dir}/{project_name}_ad_all.h5ad')

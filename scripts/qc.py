@@ -18,12 +18,12 @@ matplotlib.rcParams['font.sans-serif'] = ['Arial']
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 sns.set_theme(style="ticks", rc=custom_params)
-matplotlib.rcParams['figure.figsize'] = [6, 5]
+matplotlib.rcParams['figure.figsize'] = [12, 5]
 
 sc.settings.verbosity = 0
 sc.logging.print_header()
 sc.set_figure_params(dpi=900)
-sc._settings.ScanpyConfig.n_jobs = 8
+sc._settings.ScanpyConfig.n_jobs = 15
 
 ## from snakemake input, output and config
 workdir = snakemake.config["project"]["workdir"]
@@ -75,9 +75,10 @@ for sample_name, sample in no_doublet_dict.items():
 ad_all = ad.concat(list(filter_dict.values()), label='sample', keys=list(filter_dict.keys()), join='outer', index_unique='-', merge='same')
 su.qc(ad_all, f'{project_name}', 'MT', basedir=workdir, batch_key='sample')
 
-## save ad_all
-ad_all.write(f'{h5dir}/{project_name}_ad_all.h5ad')
+# ## save ad_all. The save out step has some more considerations
+su.write_adata(ad_all, snakemake.output['h5'][0])
+# ad_all = sc.read_h5ad(f'{h5dir}/{project_name}_ad_all.h5ad')
 ## save out sample nuclei counts
-pd.DataFrame(Counter(ad_all.obs.loc[:, 'sample']), columns=["sample", "count"]).to_csv(f'{datadir}/{project_name}_sample_nuclei_counts.tsv', sep='\t')
+pd.DataFrame(Counter(ad_all.obs.loc[:, 'sample']), columns=["sample", "count"]).to_csv(snakemake.output['cell_count'][0], sep='\t')
 ## save out ad_all.obs to tsv
-ad_all.obs.to_csv(f'{datadir}/{project_name}_ad_all.obs.tsv', sep='\t')
+ad_all.obs.to_csv(snakemake.output['meta'][0], sep='\t')
