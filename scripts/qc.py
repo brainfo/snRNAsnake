@@ -1,11 +1,10 @@
+import os
 import pandas as pd
 import scanpy as sc
 import anndata as ad
-from sc_utils import scanpy_utils as su
+import scanpy_utils as su
 import numpy as np
-import os
 import seaborn as sns
-import numpy as np
 import matplotlib
 import seaborn as sns
 from collections import defaultdict
