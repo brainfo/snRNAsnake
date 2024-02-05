@@ -322,5 +322,4 @@ dependencies:
   - zlib-ng=2.0.7=h0b41bf4_0
   - zstd=1.5.5=hfc55251_0
   - pip:
-      - temporary-projects==0.1
-prefix: /mnt/data/hong/anaconda3/envs/snRNAsnake
+      - temporary-projects-brainfo==0.1
